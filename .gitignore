@@ -1,0 +1,44 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+npm-debug.log*
+.vercel/
+
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local data: database, downloads, temp files
+backend/data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+
+# Music and archives never belong in the repository
+*.mp3
+*.flac
+*.m4a
+*.aac
+*.ogg
+*.opus
+*.wav
+*.wma
+*.aiff
+*.zip
+*.part
+
+# Tooling
+.claude/
+.DS_Store
+Thumbs.db

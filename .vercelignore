@@ -1,0 +1,6 @@
+backend
+scripts
+*.bat
+.env
+.env.*
+README.md
