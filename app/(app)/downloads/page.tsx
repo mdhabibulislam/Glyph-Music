@@ -4,12 +4,11 @@ import Link from "next/link";
 import { Download, FileArchive, FolderOpen, Inbox } from "lucide-react";
 import Artwork from "@/components/Artwork";
 import ProgressPanel from "@/components/ProgressPanel";
-import { triggerDownload } from "@/lib/api";
 import { formatBytes } from "@/lib/format";
 import { useMusic } from "@/lib/music";
 
 export default function DownloadsPage() {
-  const { payload, job, states, downloadZip } = useMusic();
+  const { payload, job, states, downloadZip, downloadTrack, mode } = useMusic();
 
   if (!payload || !job) {
     return (
@@ -46,22 +45,26 @@ export default function DownloadsPage() {
       <section className="glass overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-4">
           <h2 className="text-base font-semibold tracking-tight">Finished songs <span className="ml-1 font-mono text-sm text-ink/45">{done.length}</span></h2>
-          <p className="flex min-w-0 items-center gap-2 font-mono text-xs text-ink/45" title={payload.folder}>
-            <FolderOpen className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{payload.folder}</span>
-          </p>
+          {payload.folder ? (
+            <p className="flex min-w-0 items-center gap-2 font-mono text-xs text-ink/45" title={payload.folder}>
+              <FolderOpen className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{payload.folder}</span>
+            </p>
+          ) : (
+            <p className="text-xs text-ink/45">Held in this browser tab until you save them.</p>
+          )}
         </div>
         <ul className="scroll-slim max-h-[60vh] overflow-y-auto border-t border-white/[.07]">
           {done.map((t) => {
             const st = states[t.index];
             return (
               <li key={t.index} className="flex items-center gap-3 border-b border-white/[.05] px-5 py-2.5 hover:bg-white/[.035]">
-                <Artwork sources={[t.artwork_url, `/api/jobs/${payload.playlist.id}/tracks/${t.index}/art`]} size={40} />
+                <Artwork sources={[t.artwork_url, mode === "local" ? `/api/jobs/${payload.playlist.id}/tracks/${t.index}/art` : null]} size={40} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-mono text-[13px]">{st.file}</p>
-                  <p className="truncate text-xs text-ink/45">{st.bitrate} kbps &middot; {formatBytes(st.size)}{st.note ? ` · ${st.note}` : ""}</p>
+                  <p className="truncate text-xs text-ink/45">{st.bitrate ? `${st.bitrate} kbps · ` : ""}{formatBytes(st.size)}{st.note ? ` · ${st.note}` : ""}</p>
                 </div>
                 <button className="btn-icon !text-ok" aria-label={`Save ${t.title}`}
-                        onClick={() => triggerDownload(`/api/jobs/${payload.playlist.id}/tracks/${t.index}/file`)}>
+                        onClick={() => downloadTrack(t.index)}>
                   <Download className="h-4 w-4" />
                 </button>
               </li>

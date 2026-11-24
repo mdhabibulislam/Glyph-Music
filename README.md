@@ -4,6 +4,37 @@ Your private music sanctuary. Paste a Spotify playlist, album or song link, and 
 reads the track list, finds each song in **your own music library**, converts it to tagged MP3,
 and hands you the whole playlist as a ZIP. Single user, access-code login, runs on your PC.
 
+## Two ways to run it
+
+| | **Vercel-only** (no PC needed) | **Local** (your PC) |
+| --- | --- | --- |
+| Where audio comes from | Openly licensed recordings on the Internet Archive | Music files you already own |
+| What finds a match | Creative Commons and public-domain music: netlabels, Free Music Archive, Jamendo | Anything in your music folders |
+| Typical result for a chart playlist | Mostly *Unavailable* | Whatever you own |
+| Conversion | None: files are saved as published | FFmpeg to MP3 at your chosen quality |
+| How it downloads | Your browser fetches from archive.org and builds the ZIP | The Python backend builds it |
+| Access code | `ADMIN_ACCESS_CODE` environment variable in Vercel | Created on the website at first visit |
+
+The site picks the mode by itself: if `BACKEND_URL` is set it uses the PC backend, otherwise it
+runs on its own.
+
+### Vercel-only setup
+
+1. Push this repository to GitHub and import it in Vercel (no build settings needed).
+2. In Vercel, open **Settings → Environment Variables** and add `ADMIN_ACCESS_CODE` with a code
+   of at least 8 characters. Use a long, hard-to-guess one: the site is on the public internet.
+   Optionally add `SESSION_SECRET` (any long random text). Do **not** add `BACKEND_URL`.
+3. Redeploy. Open the site, unlock, paste a link.
+
+In this mode the website can never set or change the code; only you can, in Vercel. Changing it
+signs every device out. History and preferences are kept in your browser, and downloaded files
+are held in the browser tab until you save them (up to about 1.5 GB per session).
+
+Only three curated Internet Archive collections are searched, and only items carrying a
+Creative Commons or public-domain licence are offered. Each ZIP includes a report listing every
+song's licence and source page, because most of these licences ask you to credit the artist and
+some don't allow commercial use.
+
 ## What it does, and what it doesn't
 
 | Step | How |
@@ -13,9 +44,11 @@ and hands you the whole playlist as a ZIP. Single user, access-code login, runs 
 | Conversion | FFmpeg to MP3 at 128 / 192 / 256 / 320 kbps, tagged with Mutagen (title, artist, album, artwork, track number). |
 | Delivery | Individual MP3s, or a streamed ZIP with `Playlist.m3u`, `Playlist.csv` and `Download-report.txt`. |
 
-**It does not download audio from Spotify, YouTube or any other streaming service.** Spotify's
-audio is DRM-protected, and ripping from streaming sites breaks their terms and, for most music,
-copyright. The audio source is music you already have on disk. Songs that aren't in your library
+The table below describes local mode.
+
+**It does not download audio from Spotify, YouTube or any other streaming service, in either mode.**
+Spotify's audio is DRM-protected, and ripping from streaming sites breaks their terms and, for most
+music, copyright. The audio source is music you already have on disk, or openly licensed recordings. Songs that aren't in your library
 are shown as *Unavailable* and listed in the report, so you know exactly what's missing.
 
 Honest quality: a file is never encoded above its source. A 128 kbps MP3 stays a 128 kbps MP3
@@ -98,10 +131,12 @@ Run the tests:
 npm test
 ```
 
-## Deploying: private GitHub repo + Vercel frontend + your PC as backend
+## Deploying with your own library: Vercel frontend + your PC as backend
 
-Vercel can't run long audio jobs or hold large files, so only the website lives there. Your PC
-runs the backend and is reached through a free HTTPS tunnel. Cost: zero.
+This is the optional third arrangement, for using your own music library from anywhere. (For the
+simple no-PC deployment, see "Vercel-only setup" above.) Vercel can't run long audio jobs or hold
+large files, so only the website lives there. Your PC runs the backend and is reached through a
+free HTTPS tunnel. Cost: zero.
 
 ### 1. Push to a private GitHub repository
 

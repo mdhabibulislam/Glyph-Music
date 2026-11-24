@@ -4,13 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Download, FolderOpen, History as HistoryIcon, Loader2, Trash2 } from "lucide-react";
 import Artwork from "@/components/Artwork";
-import { api, type HistoryItem } from "@/lib/api";
+import type { HistoryItem } from "@/lib/api";
 import { formatBytes, formatDate } from "@/lib/format";
 import { useMusic } from "@/lib/music";
 
 export default function HistoryPage() {
   const router = useRouter();
-  const { downloadZip, loadJob, payload, clear } = useMusic();
+  const { downloadZip, loadJob, payload, clear, mode, historyList, historyRemove } = useMusic();
   const [items, setItems] = useState<HistoryItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -19,11 +19,12 @@ export default function HistoryPage() {
 
   const load = useCallback(async () => {
     try {
-      setItems((await api<{ items: HistoryItem[] }>("/history")).items);
+      setItems(await historyList());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't load history.");
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   useEffect(() => {
     load();
@@ -31,10 +32,10 @@ export default function HistoryPage() {
 
   const again = async (item: HistoryItem) => {
     setBusy(item.id);
-    if (item.completed > 0) {
+    if (mode === "local" && item.completed > 0) {
       await downloadZip(item.id);
     } else if (await loadJob(item.id)) {
-      router.push("/"); // nothing finished last time: reopen it so it can be downloaded
+      router.push("/"); // reopen it so it can be downloaded (again)
     }
     setBusy(null);
   };
@@ -49,7 +50,7 @@ export default function HistoryPage() {
     setBusy(item.id);
     setError(null);
     try {
-      await api(`/history/${item.id}?files=${withFiles}`, { method: "DELETE" });
+      await historyRemove(item.id, withFiles);
       if (payload?.playlist.id === item.id) clear();
       setConfirm(null);
       setWithFiles(false);
@@ -83,7 +84,7 @@ export default function HistoryPage() {
               <li key={item.id} className="border-b border-white/[.06] px-4 py-4 last:border-0 sm:px-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                   <button className="flex min-w-0 flex-1 items-center gap-4 text-left" onClick={() => open(item)} title="Open playlist">
-                    <Artwork sources={[item.cover_url, `/api/jobs/${item.id}/tracks/0/art`]} size={56} />
+                    <Artwork sources={[item.cover_url, mode === "local" ? `/api/jobs/${item.id}/tracks/0/art` : null]} size={56} />
                     <span className="min-w-0">
                       <span className="block truncate text-base font-medium tracking-tight">{item.name}</span>
                       <span className="mt-0.5 block text-xs text-ink/45">{formatDate(item.updated_at)}</span>
@@ -114,6 +115,9 @@ export default function HistoryPage() {
                 </div>
                 {confirm === item.id && (
                   <div className="glass-soft mt-3 flex flex-col gap-3 p-3.5 sm:flex-row sm:items-center sm:justify-between">
+                    {mode === "cloud" ? (
+                      <p className="text-sm text-ink/70">Remove this playlist from the history kept in this browser?</p>
+                    ) : (
                     <label className="flex min-w-0 cursor-pointer items-start gap-2.5 text-sm text-ink/75">
                       <input type="checkbox" className="check mt-0.5" checked={withFiles} onChange={(e) => setWithFiles(e.target.checked)} />
                       <span className="min-w-0">
@@ -121,6 +125,7 @@ export default function HistoryPage() {
                         <span className="mt-0.5 flex items-center gap-1.5 break-all font-mono text-[11px] text-ink/40"><FolderOpen className="h-3 w-3 shrink-0" />{item.folder}</span>
                       </span>
                     </label>
+                    )}
                     <div className="flex shrink-0 gap-2">
                       <button className="btn !py-2" onClick={() => setConfirm(null)}>Keep</button>
                       <button className="btn btn-danger !py-2" onClick={() => remove(item)} disabled={busy === item.id}>

@@ -81,7 +81,7 @@ export default function PlaylistPanel() {
     <section className="glass rise mt-6 overflow-hidden" aria-label="Playlist results">
       {/* ---------------------------------------------------------------- header */}
       <div className="flex flex-col gap-5 p-4 sm:flex-row sm:items-center sm:p-6">
-        <Artwork sources={[playlist.cover_url, playlist.tracks[0]?.artwork_url, `/api/jobs/${playlist.id}/tracks/0/art`]} size={112}
+        <Artwork sources={[playlist.cover_url, playlist.tracks[0]?.artwork_url, m.mode === "local" ? `/api/jobs/${playlist.id}/tracks/0/art` : null]} size={112}
                  className="shadow-[0_20px_40px_-18px_rgba(0,0,0,.9)]" />
         <div className="min-w-0 flex-1">
           <p className="label">{kind}{playlist.source === "csv" ? " · CSV import" : ""}</p>
@@ -168,7 +168,7 @@ export default function PlaylistPanel() {
               <input type="checkbox" className="check" checked={selected.has(t.index) && canPick} disabled={!canPick}
                      onChange={() => m.toggle(t.index)} aria-label={`Select ${t.title}`} />
               <span className="hidden text-right font-mono text-xs text-ink/35 sm:block">{t.index + 1}</span>
-              <Artwork sources={[t.artwork_url, st?.available ? `/api/jobs/${playlist.id}/tracks/${t.index}/art` : null]} size={44} />
+              <Artwork sources={[t.artwork_url, m.mode === "local" && st?.available ? `/api/jobs/${playlist.id}/tracks/${t.index}/art` : null]} size={44} />
               <div className={`min-w-0 ${canPick || status === "completed" ? "" : "opacity-50"}`}>
                 <p className="truncate text-sm font-medium" title={t.title}>{t.title}</p>
                 <p className="truncate text-xs text-ink/50" title={t.artist}>{t.artist || "Unknown artist"}</p>

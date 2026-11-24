@@ -1,15 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { backendUrl, COOKIE, verifySession } from "@/lib/server/session";
 
-// Server-side gate for every page. The session cookie is HttpOnly and is verified by
-// the backend (signature, expiry and revocation) - nothing here trusts the browser.
-const BACKEND = (process.env.BACKEND_URL || "http://127.0.0.1:8787").replace(/\/+$/, "");
-const COOKIE = "glyph_session";
-
+// Server-side gate for every page. The session cookie is HttpOnly; it is verified here
+// (Vercel-only mode) or by the PC backend (local mode) - nothing trusts the browser.
 async function sessionState(req: NextRequest): Promise<"ok" | "none" | "offline"> {
   const cookie = req.cookies.get(COOKIE)?.value;
   if (!cookie) return "none";
+  const backend = backendUrl();
+  if (!backend) return (await verifySession(cookie)) ? "ok" : "none";
   try {
-    const res = await fetch(`${BACKEND}/api/auth/session`, {
+    const res = await fetch(`${backend}/api/auth/session`, {
       headers: { cookie: `${COOKIE}=${cookie}` },
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
@@ -37,6 +37,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Everything except the API proxy (the backend authenticates that itself) and static assets.
+  // Everything except the API (which authenticates every request itself) and static assets.
   matcher: ["/((?!api/|_next/static|_next/image|favicon.ico|icon.svg).*)"],
 };

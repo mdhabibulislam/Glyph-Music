@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
-const backend = (process.env.BACKEND_URL || "http://127.0.0.1:8787").replace(/\/+$/, "");
+// Two ways to run:
+//  - BACKEND_URL set (local mode, start.bat): every /api call is proxied to the Python
+//    backend on your PC, which matches songs against your own music library.
+//  - BACKEND_URL empty (Vercel-only mode): the site's own /api routes handle the login
+//    and search openly licensed music; downloads happen in the browser.
+const backend = (process.env.BACKEND_URL || "").trim().replace(/\/+$/, "");
 const dev = process.env.NODE_ENV !== "production";
 
 const csp = [
@@ -8,7 +13,8 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.scdn.co https://*.spotifycdn.com",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  // archive.org: open-licence audio is downloaded by the browser straight from the Internet Archive.
+  "connect-src 'self' https://archive.org https://*.archive.org",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -18,10 +24,9 @@ const csp = [
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  // The browser only ever talks to this origin; /api is proxied to the Python backend,
-  // which keeps the session cookie first-party and HttpOnly.
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${backend}/api/:path*` }];
+    // beforeFiles: in local mode the proxy wins over the built-in /api routes.
+    return { beforeFiles: backend ? [{ source: "/api/:path*", destination: `${backend}/api/:path*` }] : [] };
   },
   async headers() {
     return [

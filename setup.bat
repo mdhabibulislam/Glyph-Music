@@ -18,7 +18,9 @@ if errorlevel 1 (
 
 rem ---- Python ----------------------------------------------------------------
 set "PY="
-py -3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>nul
+rem A Python that lives inside the project folder is used first, if present.
+if exist ".python\tools\python.exe" set "PY=.python\tools\python.exe"
+if not defined PY py -3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>nul
 if not errorlevel 1 set "PY=py -3"
 if not defined PY (
   python -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>nul

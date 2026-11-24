@@ -29,7 +29,8 @@ function Toggle({ label, hint, checked, onChange }: { label: string; hint?: stri
 
 /** Music preferences. Stored by the backend in SQLite; used in Settings and the Tweaks panel. */
 export default function MusicSettingsForm({ compact = false }: { compact?: boolean }) {
-  const { settings, saveSettings } = useMusic();
+  const { settings, saveSettings, mode } = useMusic();
+  const cloud = mode === "cloud";
   const [folder, setFolder] = useState("");
   const [saved, setSaved] = useState(false);
 
@@ -48,6 +49,7 @@ export default function MusicSettingsForm({ compact = false }: { compact?: boole
 
   return (
     <div className="space-y-5">
+      {!cloud && (
       <div>
         <p className="label mb-2">Default audio quality</p>
         <div className="grid grid-cols-4 gap-1.5">
@@ -70,6 +72,7 @@ export default function MusicSettingsForm({ compact = false }: { compact?: boole
           An upper limit. A file is never encoded above the quality of its source.
         </p>
       </div>
+      )}
 
       <div>
         <div className="mb-1 flex items-center justify-between">
@@ -83,6 +86,7 @@ export default function MusicSettingsForm({ compact = false }: { compact?: boole
         />
       </div>
 
+      {!cloud && (
       <div>
         <p className="label mb-2">Download folder</p>
         <div className="flex gap-2">
@@ -105,16 +109,19 @@ export default function MusicSettingsForm({ compact = false }: { compact?: boole
           </p>
         )}
       </div>
+      )}
 
       <div className="divide-y divide-white/[.06]">
         <Toggle label="Automatic ZIP" hint={compact ? undefined : "Download the ZIP as soon as a playlist finishes."}
                 checked={settings.auto_zip} onChange={(v) => saveSettings({ auto_zip: v })} />
+        {!cloud && <>
         <Toggle label="Include album artwork" hint={compact ? undefined : "Embed cover art in each MP3."}
                 checked={settings.include_artwork} onChange={(v) => saveSettings({ include_artwork: v })} />
         <Toggle label="Include track numbers" hint={compact ? undefined : "Write the playlist position into each MP3."}
                 checked={settings.include_track_numbers} onChange={(v) => saveSettings({ include_track_numbers: v })} />
         <Toggle label="Clean up temporary files" hint={compact ? undefined : "Remove working files when a download ends."}
                 checked={settings.auto_cleanup} onChange={(v) => saveSettings({ auto_cleanup: v })} />
+        </>}
       </div>
     </div>
   );

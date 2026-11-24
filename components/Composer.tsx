@@ -14,7 +14,7 @@ function StreamIcon({ className = "" }: { className?: string }) {
 }
 
 export default function Composer() {
-  const { fetchPlaylist, importCsv, loading, quality, setQuality, settings } = useMusic();
+  const { fetchPlaylist, importCsv, loading, quality, setQuality, settings, mode } = useMusic();
   const [url, setUrl] = useState("");
   const [hint, setHint] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -74,6 +74,11 @@ export default function Composer() {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-white/[.07] pt-3">
+        {mode === "cloud" ? (
+          <span className="pill text-ink/60" title="Files are saved exactly as the artist published them">
+            <AudioLines className="h-3 w-3 text-ok" /> Free &amp; open-licence music
+          </span>
+        ) : (
         <div className="flex items-center gap-2.5">
           <span className="label hidden sm:inline">Quality</span>
           <div className="flex rounded-2xl bg-black/25 p-1" role="radiogroup" aria-label="Audio quality">
@@ -89,6 +94,7 @@ export default function Composer() {
             ))}
           </div>
         </div>
+        )}
         <div className="flex flex-1 items-center justify-end gap-2">
           <input ref={file} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
           <button type="button" className="btn !px-3" onClick={() => file.current?.click()} disabled={loading} title="Import a playlist CSV (for example from Exportify)">

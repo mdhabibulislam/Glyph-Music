@@ -11,7 +11,7 @@ import { useMusic } from "@/lib/music";
 const NAME = "Habibul";
 
 export default function HomePage() {
-  const { payload, error, notice, dismiss, settings, loadJob } = useMusic();
+  const { payload, error, notice, dismiss, settings, loadJob, mode } = useMusic();
   const [hello, setHello] = useState("");
 
   useEffect(() => {
@@ -60,7 +60,14 @@ export default function HomePage() {
         </div>
       )}
 
-      {!payload && emptyLibrary && !error && (
+      {!payload && mode === "cloud" && !error && !notice && (
+        <p className="rise mx-auto mt-4 px-2 text-center text-sm leading-relaxed text-ink/45" style={{ maxWidth: "min(var(--composer-w), 100%)", animationDelay: "200ms" }}>
+          Each song is looked up among Creative Commons and public-domain recordings on the Internet Archive.
+          Independent and netlabel music is often there; chart releases usually are not.
+        </p>
+      )}
+
+      {!payload && mode === "local" && emptyLibrary && !error && (
         <div className="glass rise mx-auto mt-5 flex w-full items-center gap-4 p-4 sm:p-5" style={{ maxWidth: "min(var(--composer-w), 100%)", animationDelay: "200ms" }}>
           <FolderSearch className="h-6 w-6 shrink-0 text-accent" strokeWidth={1.6} />
           <p className="flex-1 text-sm leading-relaxed text-ink/65">

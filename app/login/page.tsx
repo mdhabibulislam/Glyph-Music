@@ -7,7 +7,7 @@ import GlyphBackground from "@/components/GlyphBackground";
 import { TweaksProvider } from "@/lib/tweaks";
 import { api, ApiError } from "@/lib/api";
 
-type Mode = "checking" | "login" | "setup";
+type Mode = "checking" | "login" | "setup" | "env";
 const MIN_LENGTH = 8;
 
 function LoginCard() {
@@ -26,9 +26,10 @@ function LoginCard() {
   // deployment creates it; from then on this page can only unlock.
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("offline")) setOffline(true);
-    api<{ configured: boolean }>("/auth/status", { allow401: true })
+    api<{ configured: boolean; mode?: string }>("/auth/status", { allow401: true })
       .then((s) => {
-        setMode(s.configured ? "login" : "setup");
+        // On Vercel the code comes from an environment variable and cannot be created here.
+        setMode(s.configured ? "login" : s.mode === "cloud" ? "env" : "setup");
         setOffline(false);
       })
       .catch(() => {
@@ -71,6 +72,11 @@ function LoginCard() {
       setRepeat("");
       if (err instanceof ApiError && err.status === 409) {
         // The code was created (or not yet created) since this page loaded: switch screens.
+        if (err.data.code === "env_required") {
+          setMode("env");
+          setBusy(false);
+          return;
+        }
         const next = err.data.code === "setup_required" ? "setup" : "login";
         setMode(next);
         reject(next === "login" ? "An access code has already been set. Enter it to unlock." : "Create your access code first.");
@@ -112,6 +118,17 @@ function LoginCard() {
           </p>
         )}
 
+        {mode === "env" && (
+          <div className="mt-6 rounded-2xl border border-white/10 bg-black/25 p-4 text-left text-sm leading-relaxed text-ink/70">
+            <p className="font-medium text-ink/90">No access code has been set yet.</p>
+            <p className="mt-2">
+              In Vercel, open your project, go to <span className="text-ink/90">Settings &rarr; Environment Variables</span>, add{" "}
+              <span className="font-mono text-[13px] text-accent">ADMIN_ACCESS_CODE</span> with a code of at least 8 characters, then redeploy.
+            </p>
+          </div>
+        )}
+
+        {mode !== "env" && <>
         <div className={`relative ${setup ? "mt-5" : "mt-8"}`}>
           <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40" />
           <input
@@ -158,6 +175,8 @@ function LoginCard() {
           {busy || mode === "checking" ? <Loader2 className="spin h-4 w-4" /> : setup ? <KeyRound className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
           {wait > 0 ? `Try again in ${wait}s` : setup ? (busy ? "Saving" : "Set access code") : busy ? "Unlocking" : "Unlock"}
         </button>
+
+        </>}
 
         <div className="mt-4 min-h-[20px] text-sm" role="alert" aria-live="polite">
           {message && <span className="text-err">{message}</span>}

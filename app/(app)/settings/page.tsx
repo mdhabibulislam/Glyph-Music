@@ -7,7 +7,8 @@ import { api } from "@/lib/api";
 import { useMusic } from "@/lib/music";
 
 export default function SettingsPage() {
-  const { settings, saveSettings, refreshSettings, error, dismiss } = useMusic();
+  const { settings, saveSettings, refreshSettings, error, dismiss, mode } = useMusic();
+  const cloud = mode === "cloud";
   const [folder, setFolder] = useState("");
 
   // Follow a running library scan.
@@ -56,6 +57,19 @@ export default function SettingsPage() {
       {error && <div className="rounded-2xl border border-err/30 bg-err/10 px-4 py-3 text-sm text-[#ffc9c9]" role="alert">{error.message}</div>}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {cloud ? (
+        <section className="glass p-5 sm:p-6">
+          <h2 className="text-base font-semibold tracking-tight">Where the music comes from</h2>
+          <p className="mt-1.5 text-sm leading-relaxed text-ink/55">
+            Songs are looked up on the Internet Archive, in three collections of openly licensed music: netlabel releases,
+            the Free Music Archive and Jamendo. Only recordings published under a Creative Commons or public-domain licence are offered.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-ink/55">
+            Your browser downloads each file straight from archive.org and builds the ZIP itself. Every ZIP includes a report
+            listing each song&apos;s licence and source page, so you can credit the artist.
+          </p>
+        </section>
+        ) : (
         <section className="glass p-5 sm:p-6">
           <h2 className="text-base font-semibold tracking-tight">Music library</h2>
           <p className="mt-1.5 text-sm leading-relaxed text-ink/55">
@@ -93,6 +107,7 @@ export default function SettingsPage() {
             <button className="btn !py-2" onClick={rescan} disabled={!folders.length || lib?.running}><RefreshCw className="h-4 w-4" />Rescan</button>
           </div>
         </section>
+        )}
 
         <section className="glass p-5 sm:p-6">
           <h2 className="mb-4 text-base font-semibold tracking-tight">Downloads</h2>
@@ -102,29 +117,29 @@ export default function SettingsPage() {
         <section className="glass p-5 sm:p-6">
           <h2 className="text-base font-semibold tracking-tight">System</h2>
           <ul className="mt-4 space-y-3 text-sm">
-            <li className="flex items-center gap-2.5">
+            {!cloud && <li className="flex items-center gap-2.5">
               {settings?.ffmpeg ? <CheckCircle2 className="h-4 w-4 text-ok" /> : <XCircle className="h-4 w-4 text-err" />}
               <span className="text-ink/75">{settings?.ffmpeg ? "FFmpeg is ready for MP3 conversion" : "FFmpeg was not found \u2013 run setup.bat"}</span>
-            </li>
+            </li>}
             <li className="flex items-center gap-2.5"><ShieldCheck className="h-4 w-4 text-ok" /><span className="text-ink/75">Signed in with a private, HttpOnly session</span></li>
           </ul>
           {settings && (
             <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-white/[.07] pt-4">
               {[
                 ["Playlist limit", `${settings.limits.max_playlist_tracks} songs`],
-                ["Job limit", `${settings.limits.max_job_gb} GB`],
+                [cloud ? "Session limit" : "Job limit", `${settings.limits.max_job_gb} GB`],
                 ["File limit", `${settings.limits.max_source_file_mb} MB`],
               ].map(([k, v]) => (
                 <div key={k}><dt className="label">{k}</dt><dd className="mt-1 font-mono text-sm text-ink/85">{v}</dd></div>
               ))}
             </dl>
           )}
-          <p className="mt-3 text-xs text-ink/40">Limits are set in the <span className="font-mono">.env</span> file on your PC.</p>
+          {!cloud && <p className="mt-3 text-xs text-ink/40">Limits are set in the <span className="font-mono">.env</span> file on your PC.</p>}
         </section>
 
         <section className="glass p-5 sm:p-6">
           <h2 className="text-base font-semibold tracking-tight">Session</h2>
-          <p className="mt-1.5 text-sm leading-relaxed text-ink/55">You stay signed in on this device for seven days. Logging out ends the session everywhere it was copied.</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-ink/55">{cloud ? "You stay signed in on this device for seven days. To sign out every device at once, change the access code in Vercel." : "You stay signed in on this device for seven days. Logging out ends the session everywhere it was copied."}</p>
           <button className="btn btn-danger mt-5" onClick={logout}><LogOut className="h-4 w-4" />Logout</button>
         </section>
       </div>

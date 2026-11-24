@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   api, ApiError, triggerDownload,
-  type JobSnapshot, type MusicSettings, type PlaylistPayload, type TrackState,
+  type HistoryItem, type JobSnapshot, type MusicSettings, type PlaylistPayload, type TrackState,
 } from "./api";
 
 export interface MusicError {
@@ -12,7 +12,12 @@ export interface MusicError {
   csvFallback?: boolean;
 }
 
-interface Ctx {
+export interface MusicCtx {
+  /** "local": the Python backend on your PC and your own library. "cloud": the site
+   *  alone (Vercel), finding openly licensed music and downloading it in the browser. */
+  mode: "local" | "cloud";
+  historyList: () => Promise<HistoryItem[]>;
+  historyRemove: (id: string, withFiles: boolean) => Promise<void>;
   payload: PlaylistPayload | null;
   job: JobSnapshot | null;
   states: Record<number, TrackState>;
@@ -40,7 +45,9 @@ interface Ctx {
   dismiss: () => void;
 }
 
-const MusicContext = createContext<Ctx | null>(null);
+type Ctx = MusicCtx;
+
+export const MusicContext = createContext<MusicCtx | null>(null);
 
 export function MusicProvider({ children }: { children: ReactNode }) {
   const [payload, setPayload] = useState<PlaylistPayload | null>(null);
@@ -249,6 +256,11 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<Ctx>(() => ({
+    mode: "local",
+    historyList: async () => (await api<{ items: HistoryItem[] }>("/history")).items,
+    historyRemove: async (id, withFiles) => {
+      await api(`/history/${id}?files=${withFiles}`, { method: "DELETE" });
+    },
     payload, job, states, selected, quality, loading, error, notice, settings,
     setQuality: (q) => {
       qualityTouched.current = true;
